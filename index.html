@@ -1,10 +1,146 @@
+eado
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Trading Signal App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Signal App</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#0b1220;
+  color:white;
+}
+.header{
+  padding:25px 20px;
+  text-align:center;
+  background:#111b2e;
+}
+.header h1{margin:0;font-size:26px}
+.header p{color:#9aa8bd}
+
+.container{padding:20px;max-width:600px;margin:auto}
+
+.card{
+  background:#151f33;
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:18px;
+  box-shadow:0 5px 20px rgba(0,0,0,.3);
+}
+
+select,button{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+  border:0;
+  margin-top:10px;
+  font-size:16px;
+}
+
+.signal{
+  text-align:center;
+  padding:25px;
+  border-radius:15px;
+  background:#102b21;
+}
+
+.signal h2{
+  font-size:38px;
+  margin:10px 0;
+  color:#35d07f;
+}
+
+.info{
+  display:flex;
+  justify-content:space-between;
+  margin-top:15px;
+}
+
+button{
+  background:#2563eb;
+  color:white;
+  font-weight:bold;
+}
+
+.footer{
+  text-align:center;
+  color:#718096;
+  font-size:12px;
+  padding:20px;
+}
+</style>
 </head>
+
 <body>
-  <h1>Trading Signal App</h1>
-  <p>1 Minute & 5 Minute Signals</p>
+
+<div class="header">
+  <h1>📊 Trading Signal App</h1>
+  <p>Forex & OTC • 1 Minute & 5 Minute</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <label>Market</label>
+    <select>
+      <option>OTC Market</option>
+      <option>Forex Market</option>
+    </select>
+
+    <label>Timeframe</label>
+    <select>
+      <option>1 Minute</option>
+      <option>5 Minutes</option>
+    </select>
+
+    <button onclick="generateSignal()">GENERATE SIGNAL</button>
+  </div>
+
+  <div class="card">
+    <div class="signal">
+      <p>Current Signal</p>
+      <h2 id="signal">WAIT</h2>
+      <p id="confidence">Press Generate Signal</p>
+    </div>
+
+    <div class="info">
+      <span>⏱ Timeframe</span>
+      <span id="timeframe">1 Minute</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Signal tool for educational purposes. No signal is guaranteed.
+</div>
+
+<script>
+function generateSignal(){
+
+  const signals = ["BUY","SELL","WAIT"];
+  const signal = signals[Math.floor(Math.random()*signals.length)];
+
+  document.getElementById("signal").innerText = signal;
+
+  if(signal === "BUY"){
+    document.getElementById("confidence").innerText =
+      "Bullish Signal • Confidence: 70%";
+  }
+  else if(signal === "SELL"){
+    document.getElementById("confidence").innerText =
+      "Bearish Signal • Confidence: 70%";
+  }
+  else{
+    document.getElementById("confidence").innerText =
+      "No clear setup • Wait";
+  }
+}
+</script>
+
 </body>
 </html>
