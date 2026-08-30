@@ -1,32 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Trading Signal App</title>
 
-    signal.textContent="BUY";
-    signal.classList.add("buy");
+<style>
+body{
+  background:#111;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+}
 
-  }
-  else if(random < 0.33){
+.box{
+  margin:50px auto;
+  padding:25px;
+  width:300px;
+  background:#222;
+  border-radius:15px;
+}
 
-    signal.textContent="SELL";
-    signal.classList.add("sell");
+#signal{
+  font-size:35px;
+  font-weight:bold;
+  margin:20px;
+}
 
-  }
-  else{
+.buy{
+  color:lime;
+}
 
-    signal.textContent="WAIT";
-    signal.classList.add("wait");
+.sell{
+  color:red;
+}
 
-  }
+.wait{
+  color:yellow;
+}
 
-  details.textContent =
-    market.toUpperCase() +
-    " • " +
-    pair +
-    " • " +
-    timeframe +
-    " Minute";
+button{
+  padding:12px 25px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>Trading Signal</h2>
+
+<div id="signal">WAIT</div>
+
+<p id="details"></p>
+
+<button onclick="getSignal()">GET SIGNAL</button>
+
+</div>
+
+
+<script>
+
+function getSignal(){
+
+let signal=document.getElementById("signal");
+let details=document.getElementById("details");
+
+signal.classList.remove("buy","sell","wait");
+
+
+let random=Math.random();
+
+
+if(random < 0.33){
+
+signal.textContent="BUY";
+signal.classList.add("buy");
+
+}
+
+else if(random < 0.66){
+
+signal.textContent="SELL";
+signal.classList.add("sell");
+
+}
+
+else{
+
+signal.textContent="WAIT";
+signal.classList.add("wait");
+
+}
+
+
+details.textContent =
+"EUR/USD • 1 Minute";
+
 
 }
 
 </script>
+
 
 </body>
 </html>
