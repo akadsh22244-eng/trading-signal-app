@@ -1,46 +1,455 @@
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Forex Signal Pro</title>
 
-</body>
-</html>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#0b1020;
+  color:#fff;
+  font-family:Arial,sans-serif;
+}
+.app{
+  max-width:700px;
+  margin:auto;
+  padding:18px;
+}
+h1{text-align:center;margin:5px 0}
+.sub{text-align:center;color:#9ca3af;font-size:13px}
+
+.controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:20px 0;
+}
+select,button{
+  width:100%;
+  padding:13px;
+  border:0;
+  border-radius:9px;
+  font-size:15px;
+}
+button{
+  grid-column:1/3;
+  background:#2563eb;
+  color:white;
+  font-weight:bold;
+}
+.card{
+  background:#151b2e;
+  border-radius:15px;
+  padding:18px;
+  margin-bottom:15px;
+}
+.signal{
+  text-align:center;
+  font-size:42px;
+  font-weight:bold;
+  padding:18px;
+}
+.buy{color:#22c55e}
+.sell{color:#ef4444}
+.wait{color:#facc15}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.box{
+  background:#0f1527;
+  padding:13px;
+  border-radius:9px;
+}
+.label{color:#9ca3af;font-size:12px}
+.value{font-size:17px;font-weight:bold;margin-top:5px}
+
+.status{
+  text-align:center;
+  color:#9ca3af;
+  font-size:13px;
+}
+.warning{
+  text-align:center;
+  color:#fbbf24;
+  font-size:12px;
+  margin-top:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>📊 FOREX SIGNAL PRO</h1>
+<div class="sub">Real Forex analysis • No automatic trading</div>
+
+<div class="controls">
+
+<select id="pair">
+<option value="EUR/USD">EUR/USD</option>
+<option value="GBP/USD">GBP/USD</option>
+<option value="USD/JPY">USD/JPY</option>
+<option value="AUD/USD">AUD/USD</option>
+<option value="USD/CAD">USD/CAD</option>
+<option value="NZD/USD">NZD/USD</option>
+<option value="EUR/JPY">EUR/JPY</option>
+<option value="GBP/JPY">GBP/JPY</option>
+<option value="XAU/USD">XAU/USD</option>
+</select>
+
+<select id="interval">
+<option value="1min">1 Minute</option>
+<option value="5min">5 Minutes</option>
+<option value="15min">15 Minutes</option>
+</select>
+
+<button onclick="analyze()">🔄 GET LIVE SIGNAL</button>
+
+</div>
+
+<div class="card">
+
+<div id="signal" class="signal wait">WAIT</div>
+
+<div class="grid">
+
+<div class="box">
+<div class="label">PAIR</div>
+<div class="value" id="pairName">EUR/USD</div>
+</div>
+
+<div class="box">
+<div class="label">PRICE</div>
+<div class="value" id="price">---</div>
+</div>
+
+<div class="box">
+<div class="label">RSI 14</div>
+<div class="value" id="rsi">---</div>
+</div>
+
+<div class="box">
+<div class="label">EMA 9</div>
+<div class="value" id="ema9">---</div>
+</div>
+
+<div class="box">
+<div class="label">EMA 21</div>
+<div class="value" id="ema21">---</div>
+</div>
+
+<div class="box">
+<div class="label">MACD</div>
+<div class="value" id="macd">---</div>
+</div>
+
+<div class="box">
+<div class="label">TREND</div>
+<div class="value" id="trend">---</div>
+</div>
+
+<div class="box">
+<div class="label">PRICE ACTION</div>
+<div class="value" id="action">---</div>
+</div>
+
+<div class="box">
+<div class="label">SUPPORT</div>
+<div class="value" id="support">---</div>
+</div>
+
+<div class="box">
+<div class="label">RESISTANCE</div>
+<div class="value" id="resistance">---</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+<div class="status" id="status">
+Waiting for market data...
+</div>
+</div>
+
+<div class="warning">
+⚠️ Analysis only. No automatic trading. Signals are not guaranteed.
+</div>
+
+</div>
+
+<script>
+
+/*
+=================================================
+PUT YOUR TWELVEDATA API KEY HERE
+=================================================
+*/
+const API_KEY = "YOUR_TWELVEDATA_API_KEY";
 
 
-</body>
-else{
+function EMA(values, period){
 
-signal.textContent="WAIT";
-signal.classList.add("wait");
+  if(values.length < period) return null;
 
+  let multiplier = 2 / (period + 1);
+
+  let ema = values
+    .slice(0,period)
+    .reduce((a,b)=>a+b,0) / period;
+
+  for(let i=period;i<values.length;i++){
+    ema = ((values[i]-ema)*multiplier)+ema;
+  }
+
+  return ema;
 }
 
 
-details.textContent =
-"EUR/USD • 1 Minute";
+function RSI(values, period=14){
 
+  if(values.length <= period) return null;
 
+  let gains=0;
+  let losses=0;
+
+  for(let i=1;i<=period;i++){
+
+    let change=values[i]-values[i-1];
+
+    if(change>0) gains+=change;
+    else losses+=Math.abs(change);
+  }
+
+  let avgGain=gains/period;
+  let avgLoss=losses/period;
+
+  for(let i=period+1;i<values.length;i++){
+
+    let change=values[i]-values[i-1];
+
+    let gain=change>0?change:0;
+    let loss=change<0?Math.abs(change):0;
+
+    avgGain=((avgGain*(period-1))+gain)/period;
+    avgLoss=((avgLoss*(period-1))+loss)/period;
+  }
+
+  if(avgLoss===0) return 100;
+
+  let rs=avgGain/avgLoss;
+
+  return 100-(100/(1+rs));
 }
+
+
+function MACD(values){
+
+  let ema12=EMA(values,12);
+  let ema26=EMA(values,26);
+
+  if(ema12===null || ema26===null) return null;
+
+  return ema12-ema26;
+}
+
+
+function priceAction(candles){
+
+  let last=candles[candles.length-1];
+
+  let open=Number(last.open);
+  let close=Number(last.close);
+  let high=Number(last.high);
+  let low=Number(last.low);
+
+  if(close>open && close>=high-(high-low)*0.25){
+    return "BULLISH";
+  }
+
+  if(close<open && close<=low+(high-low)*0.25){
+    return "BEARISH";
+  }
+
+  return "NEUTRAL";
+}
+
+
+function supportResistance(candles){
+
+  let lows=candles.map(c=>Number(c.low));
+  let highs=candles.map(c=>Number(c.high));
+
+  let support=Math.min(...lows.slice(-20));
+  let resistance=Math.max(...highs.slice(-20));
+
+  return {
+    support,
+    resistance
+  };
+}
+
+
+async function analyze(){
+
+  const pair=document.getElementById("pair").value;
+  const interval=document.getElementById("interval").value;
+
+  const signal=document.getElementById("signal");
+  const status=document.getElementById("status");
+
+  document.getElementById("pairName").textContent=pair;
+
+  signal.textContent="LOADING...";
+  signal.className="signal wait";
+
+  status.textContent="Getting live Forex candles...";
+
+  try{
+
+    if(API_KEY==="YOUR_TWELVEDATA_API_KEY"){
+      throw new Error("API key not added");
+    }
+
+    const url=
+      "https://api.twelvedata.com/time_series"+
+      "?symbol="+encodeURIComponent(pair)+
+      "&interval="+interval+
+      "&outputsize=100"+
+      "&apikey="+encodeURIComponent(API_KEY);
+
+    const response=await fetch(url);
+
+    const data=await response.json();
+
+    if(data.status==="error"){
+      throw new Error(data.message || "API error");
+    }
+
+    if(!data.values || data.values.length<30){
+      throw new Error("Not enough candle data");
+    }
+
+    const candles=data.values.reverse();
+
+    const closes=candles.map(c=>Number(c.close));
+
+    const price=closes[closes.length-1];
+
+    const ema9=EMA(closes,9);
+    const ema21=EMA(closes,21);
+
+    const rsi=RSI(closes,14);
+
+    const macd=MACD(closes);
+
+    const action=priceAction(candles);
+
+    const levels=supportResistance(candles);
+
+
+    document.getElementById("price").textContent=
+      price.toFixed(5);
+
+    document.getElementById("ema9").textContent=
+      ema9.toFixed(5);
+
+    document.getElementById("ema21").textContent=
+      ema21.toFixed(5);
+
+    document.getElementById("rsi").textContent=
+      rsi.toFixed(2);
+
+    document.getElementById("macd").textContent=
+      macd.toFixed(6);
+
+    document.getElementById("action").textContent=
+      action;
+
+    document.getElementById("support").textContent=
+      levels.support.toFixed(5);
+
+    document.getElementById("resistance").textContent=
+      levels.resistance.toFixed(5);
+
+
+    let buyScore=0;
+    let sellScore=0;
+
+
+    // EMA trend
+    if(ema9>ema21) buyScore++;
+    if(ema9<ema21) sellScore++;
+
+
+    // RSI
+    if(rsi>=50 && rsi<70) buyScore++;
+    if(rsi<=50 && rsi>30) sellScore++;
+
+
+    // MACD
+    if(macd>0) buyScore++;
+    if(macd<0) sellScore++;
+
+
+    // Candlestick / Price Action
+    if(action==="BULLISH") buyScore++;
+    if(action==="BEARISH") sellScore++;
+
+
+    // Final signal
+    if(buyScore>=3 && buyScore>sellScore){
+
+      signal.textContent="CALL / BUY";
+      signal.className="signal buy";
+
+    }
+
+    else if(sellScore>=3 && sellScore>buyScore){
+
+      signal.textContent="PUT / SELL";
+      signal.className="signal sell";
+
+    }
+
+    else{
+
+      signal.textContent="WAIT";
+      signal.className="signal wait";
+
+    }
+
+
+    status.textContent=
+      "Updated: "+new Date().toLocaleTimeString()+
+      " • Buy score: "+buyScore+
+      " • Sell score: "+sellScore;
+
+  }
+
+  catch(error){
+
+    signal.textContent="ERROR";
+    signal.className="signal wait";
+
+    status.textContent=error.message;
+
+  }
+}
+
+
+// Refresh every 60 seconds
+setInterval(analyze,60000);
 
 </script>
 
-else{
-
-signal.textContent="WAIT";
-signal.classList.add("wait");
-
-}
-
-
-details.textContent =
-"EUR/USD • 1 Minute";
-
-
-}
-
-</script>
-
-
 </body>
 </html>
-
-</body>
-</html>
-
