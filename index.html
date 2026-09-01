@@ -1,40 +1,210 @@
-    else if(sellScore>=3 && sellScore>buyScore){
+<script>
+const API_KEY = "YOUR_TWELVE_DATA_API_KEY";
 
-      signal.textContent="PUT / SELL";
-      signal.className="signal sell";
+async function getForexCandles(pair = "EUR/USD", interval = "1min") {
+  const url =
+    "https://api.twelvedata.com/time_series" +
+    "?symbol=" + encodeURIComponent(pair) +
+    "&interval=" + encodeURIComponent(interval) +
+    "&outputsize=100" +
+    "&timezone=UTC" +
+    "&apikey=" + encodeURIComponent(API_KEY);
 
-    }
+  const response = await fetch(url);
+  const data = await response.json();
 
-    else{
-
-      signal.textContent="WAIT";
-      signal.className="signal wait";
-
-    }
-
-
-    status.textContent=
-      "Updated: "+new Date().toLocaleTimeString()+
-      " • Buy score: "+buyScore+
-      " • Sell score: "+sellScore;
-
+  if (data.status !== "ok") {
+    throw new Error(data.message || "Market data error");
   }
 
-  catch(error){
+  return data.values.reverse().map(c => ({
+    time: c.datetime,
+    open: Number(c.open),
+    high: Number(c.high),
+    low: Number(c.low),
+    close: Number(c.close)
+  }));
+}
 
-    signal.textContent="ERROR";
-    signal.className="signal wait";
 
-    status.textContent=error.message;
+// EMA
+function EMA(values, period) {
+  const k = 2 / (period + 1);
+  let ema = values[0];
 
+  for (let i = 1; i < values.length; i++) {
+    ema = values[i] * k + ema * (1 - k);
+  }
+
+  return ema;
+}
+
+
+// RSI
+function RSI(values, period = 14) {
+  if (values.length < period + 1) return null;
+
+  let gain = 0;
+  let loss = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const change = values[i] - values[i - 1];
+
+    if (change >= 0) gain += change;
+    else loss -= change;
+  }
+
+  let avgGain = gain / period;
+  let avgLoss = loss / period;
+
+  for (let i = period + 1; i < values.length; i++) {
+    const change = values[i] - values[i - 1];
+
+    const currentGain = Math.max(change, 0);
+    const currentLoss = Math.max(-change, 0);
+
+    avgGain = ((avgGain * (period - 1)) + currentGain) / period;
+    avgLoss = ((avgLoss * (period - 1)) + currentLoss) / period;
+  }
+
+  if (avgLoss === 0) return 100;
+
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+
+// Simple MACD
+function MACD(values) {
+  if (values.length < 26) return null;
+
+  const ema12 = EMA(values.slice(-12), 12);
+  const ema26 = EMA(values.slice(-26), 26);
+
+  return ema12 - ema26;
+}
+
+
+// Price Action
+function priceAction(candle) {
+  const body = Math.abs(candle.close - candle.open);
+  const upperWick = candle.high - Math.max(candle.open, candle.close);
+  const lowerWick = Math.min(candle.open, candle.close) - candle.low;
+
+  if (candle.close > candle.open && lowerWick > body * 1.5)
+    return "Bullish rejection";
+
+  if (candle.close < candle.open && upperWick > body * 1.5)
+    return "Bearish rejection";
+
+  if (candle.close > candle.open)
+    return "Bullish";
+
+  if (candle.close < candle.open)
+    return "Bearish";
+
+  return "Neutral";
+}
+
+
+// Signal
+function generateSignal(candles) {
+  const closes = candles.map(c => c.close);
+
+  const price = closes[closes.length - 1];
+  const ema9 = EMA(closes, 9);
+  const ema21 = EMA(closes, 21);
+  const rsi = RSI(closes, 14);
+  const macd = MACD(closes);
+
+  const action = priceAction(candles[candles.length - 1]);
+
+  let score = 0;
+
+  if (ema9 > ema21) score++;
+  if (ema9 < ema21) score--;
+
+  if (rsi > 50 && rsi < 70) score++;
+  if (rsi < 50 && rsi > 30) score--;
+
+  if (macd > 0) score++;
+  if (macd < 0) score--;
+
+  if (action === "Bullish" ||
+      action === "Bullish rejection") score++;
+
+  if (action === "Bearish" ||
+      action === "Bearish rejection") score--;
+
+  let signal = "WAIT";
+
+  if (score >= 3) signal = "CALL";
+  if (score <= -3) signal = "PUT";
+
+  return {
+    price,
+    ema9,
+    ema21,
+    rsi,
+    macd,
+    action,
+    score,
+    signal
+  };
+}
+
+
+// Main
+async function updateSignal() {
+  try {
+    const pair = document.getElementById("pair")?.value || "EUR/USD";
+    const interval = document.getElementById("interval")?.value || "1min";
+
+    const candles = await getForexCandles(pair, interval);
+    const result = generateSignal(candles);
+
+    console.log("Candles:", candles);
+    console.log("Signal:", result);
+
+    // তোমার HTML elements
+    const price = document.getElementById("price");
+    const rsi = document.getElementById("rsi");
+    const ema9 = document.getElementById("ema9");
+    const ema21 = document.getElementById("ema21");
+    const macd = document.getElementById("macd");
+    const action = document.getElementById("priceAction");
+    const signal = document.getElementById("signal");
+
+    if (price) price.textContent = result.price.toFixed(5);
+    if (rsi) rsi.textContent = result.rsi.toFixed(2);
+    if (ema9) ema9.textContent = result.ema9.toFixed(5);
+    if (ema21) ema21.textContent = result.ema21.toFixed(5);
+    if (macd) macd.textContent = result.macd.toFixed(6);
+    if (action) action.textContent = result.action;
+
+    if (signal) {
+      signal.textContent = result.signal;
+
+      signal.style.color =
+        result.signal === "CALL" ? "#00ff88" :
+        result.signal === "PUT" ? "#ff4444" :
+        "#ffd000";
+    }
+
+  } catch (error) {
+    console.error(error);
+
+    const status = document.getElementById("status");
+    if (status) {
+      status.textContent = "ERROR: " + error.message;
+    }
   }
 }
 
 
-// Refresh every 60 seconds
-setInterval(analyze,60000);
+// প্রথমবার
+updateSignal();
 
+// প্রতি 15 সেকেন্ডে data update
+setInterval(updateSignal, 15000);
 </script>
-
-</body>
-</html>
